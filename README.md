@@ -1,5 +1,9 @@
 # Dragonwilds on ARM64
 
+[![Build and publish image](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/docker-publish.yaml/badge.svg)](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/docker-publish.yaml)
+[![GHCR image](https://img.shields.io/badge/ghcr.io-dragonwilds--arm64-blue?logo=docker&logoColor=white)](https://github.com/Agentic-Rens/dragonwilds-arm64/pkgs/container/dragonwilds-arm64)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Run a RuneScape: Dragonwilds dedicated server on a 64-bit Raspberry Pi using
 Docker and Box64. This project adapts [Jagex's official server image](https://github.com/runescape/rsdw-dedicated)
 with an ARM64 runtime, x86 translation, and a native game downloader.
