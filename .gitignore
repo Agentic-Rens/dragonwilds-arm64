@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+backups/
+__pycache__/
+*.py[cod]
+.DS_Store

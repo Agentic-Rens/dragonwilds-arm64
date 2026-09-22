@@ -1,0 +1,27 @@
+name: dragonwilds-pi
+services:
+  server:
+    build: .
+    image: dragonwilds-pi:experimental
+    platform: linux/arm64
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 2m
+    env_file: .env
+    environment:
+      RSDW_PORT: "7777"
+      RSDW_AUTO_STOP_ON_UPDATE: "false"
+      BOX64_DYNACACHE: "0"
+      RSDW_ADDITIONAL_ARGS: "-log -unattended -nullrhi -nosound -ansimalloc"
+    ports:
+      - "7777:7777/udp"
+      - "8888:8888/udp"
+    volumes:
+      - server-data:/home/steam/rsdw-dedicated
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+volumes:
+  server-data:
