@@ -2,7 +2,7 @@ name: dragonwilds-pi
 services:
   server:
     build: .
-    image: dragonwilds-pi:experimental
+    image: ghcr.io/agentic-rens/dragonwilds-arm64:latest
     platform: linux/arm64
     init: true
     restart: unless-stopped

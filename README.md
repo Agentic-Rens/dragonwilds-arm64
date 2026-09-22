@@ -38,8 +38,9 @@ Devices this server has been run on:
 - Docker Engine and the Docker Compose plugin (`docker compose`) on Linux, or
   Docker Desktop on Mac, which includes Compose.
 - Python 3 for the configuration helpers.
-- Plenty of free disk space: **30 GB or more recommended before building**.
-  Build layers, the image, game downloads, and saves all use space. An SSD is
+- Plenty of free disk space: **30 GB or more recommended**. The image, game
+  downloads, and saves all use space, and building the image yourself needs
+  extra room for build layers. An SSD is
   preferable to a microSD card for a long-running server.
 - A suitable power supply and cooling for sustained CPU load.
 - Your **EOS player ID**, shown at the bottom of the game's Settings menu.
@@ -75,9 +76,11 @@ sh scripts/setup.sh
 ```
 
 Paste your EOS player ID when prompted. The script creates `.env` with generated
-passwords, builds the image, runs preflight, and starts the container. It checks
+passwords, pulls the prebuilt image from GHCR, runs preflight, and starts the
+container. It checks
 for Docker, Compose, Python, and an ARM64 Linux Docker engine first. It does not
-install system packages.
+install system packages. If the pull fails, it falls back to building the image
+locally, which can take around an hour on a Pi 4.
 
 You can also supply the settings up front:
 
@@ -154,8 +157,8 @@ sh scripts/setup.sh
 ```
 
 Paste your EOS player ID from the game's Settings menu when prompted. Setup
-creates `.env` with fixed join/admin passwords, builds the image, runs
-preflight, and starts the server. The first build and game download can take
+creates `.env` with fixed join/admin passwords, pulls the prebuilt image, runs
+preflight, and starts the server. The first game download can take
 a while. View the passwords privately with `open -e .env`.
 
 Follow startup:
@@ -262,16 +265,26 @@ Open `.env` locally to view the passwords or change your settings. Keep it out
 of version control. You can also copy `.env.example` to `.env`, fill it in, and
 run `chmod 600 .env`.
 
-### 2. Build the image
+### 2. Get the image
+
+Pull the prebuilt ARM64 image published from this repository:
 
 ```sh
-docker build --platform linux/arm64 -t dragonwilds-pi:experimental .
+docker compose pull server
 sh scripts/preflight.sh
 ```
 
-The first build compiles Box64 and can take around an hour on a Pi 4. Later
-builds reuse Docker's cache. Preflight checks the translator and downloader;
-it does not start the game.
+Preflight checks the translator and downloader; it does not start the game.
+
+To build the image yourself instead (for example after changing the
+`Dockerfile`):
+
+```sh
+docker compose build server
+```
+
+A local build compiles Box64 and can take around an hour on a Pi 4. Later
+builds reuse Docker's cache.
 
 ### 3. Start the server
 
@@ -354,6 +367,13 @@ The base image digest and translator source are pinned, but the Steam game
 download is **not** version-pinned. There is no background update polling or
 automatic shutdown when a new game release appears.
 
+To update to the latest published image:
+
+```sh
+docker compose pull server
+docker compose up -d --no-build
+```
+
 To rebuild after changing this repository:
 
 ```sh
@@ -372,7 +392,7 @@ mkdir -p backups
 docker run --rm --user 0:0 --entrypoint tar \
   -v dragonwilds-pi_server-data:/data:ro \
   -v "$PWD/backups:/backup" \
-  dragonwilds-pi:experimental \
+  ghcr.io/agentic-rens/dragonwilds-arm64:latest \
   -czf /backup/server-data.tar.gz -C /data .
 docker compose start
 ```
@@ -382,7 +402,7 @@ exists. Keep dated copies elsewhere, and back up `.env` privately as well.
 **Do not run `docker compose down -v` unless you intend to delete the world.**
 
 To restore an archive to a new installation, place it at
-`backups/server-data.tar.gz`, restore your `.env`, build the image, and run:
+`backups/server-data.tar.gz`, restore your `.env`, pull the image, and run:
 
 ```sh
 docker compose stop
@@ -390,7 +410,7 @@ docker volume create dragonwilds-pi_server-data
 docker run --rm --user 0:0 --entrypoint tar \
   -v dragonwilds-pi_server-data:/data \
   -v "$PWD/backups:/backup:ro" \
-  dragonwilds-pi:experimental \
+  ghcr.io/agentic-rens/dragonwilds-arm64:latest \
   -xzf /backup/server-data.tar.gz -C /data
 docker compose up -d --no-build
 ```
