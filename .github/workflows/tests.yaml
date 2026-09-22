@@ -1,0 +1,62 @@
+name: Tests and coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run tests with coverage
+        env:
+          COVERAGE_FILE: ${{ github.workspace }}/.coverage
+          COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
+          PYTHONPATH: ${{ github.workspace }}/.github/coverage
+        run: |
+          pip install coverage
+          python3 -m unittest discover -s tests
+          coverage combine
+          coverage report
+          coverage json -o coverage-report.json
+
+      - name: Build badge payload
+        run: |
+          python3 - <<'EOF'
+          import json
+          pct = json.load(open("coverage-report.json"))["totals"]["percent_covered"]
+          color = "green" if pct >= 80 else "yellow" if pct >= 60 else "red"
+          badge = {"schemaVersion": 1, "label": "coverage",
+                   "message": f"{pct:.0f}%", "color": color}
+          json.dump(badge, open("coverage.json", "w"))
+          print(badge)
+          EOF
+
+      - name: Publish badge to badges branch
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          cp coverage.json /tmp/coverage.json
+          rm coverage.json
+          if git ls-remote --exit-code --heads origin badges >/dev/null; then
+            git fetch origin badges
+            git checkout badges
+          else
+            git checkout --orphan badges
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          cp /tmp/coverage.json coverage.json
+          git add coverage.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "coverage badge: $(python3 -c "import json; print(json.load(open('coverage.json'))['message'])")" || true
+          git push origin badges:badges
