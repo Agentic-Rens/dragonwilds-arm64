@@ -2,6 +2,7 @@
 
 [![Build and publish image](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/docker-publish.yaml/badge.svg)](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/docker-publish.yaml)
 [![Pipelines](https://img.shields.io/github/actions/workflow/status/Agentic-Rens/dragonwilds-arm64/docker-publish.yaml?label=pipelines)](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/docker-publish.yaml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAgentic-Rens%2Fdragonwilds-arm64%2Fbadges%2Fcoverage.json)](https://github.com/Agentic-Rens/dragonwilds-arm64/actions/workflows/tests.yaml)
 [![GHCR image](https://img.shields.io/badge/ghcr.io-dragonwilds--arm64-blue?logo=docker&logoColor=white)](https://github.com/Agentic-Rens/dragonwilds-arm64/pkgs/container/dragonwilds-arm64)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 

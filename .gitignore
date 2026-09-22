@@ -9,4 +9,8 @@
 backups/
 __pycache__/
 *.py[cod]
+.coverage
+.coverage.*
+!.coveragerc
+coverage-report.json
 .DS_Store

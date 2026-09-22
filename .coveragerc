@@ -1,0 +1,9 @@
+[run]
+parallel = true
+include =
+    */scripts/*.py
+
+[paths]
+source =
+    scripts
+    */scripts
