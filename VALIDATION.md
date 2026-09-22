@@ -75,6 +75,17 @@ with SIGSEGV. Disabling the persistent translation cache alone did not fix it.
 Using `-ansimalloc` allowed repeated saved-world loads. Compose keeps that flag
 and `BOX64_DYNACACHE=0` as the tested combination.
 
+### Performance threading
+
+The server reports Unreal Engine 5.6.1. In that version,
+`FApp::ShouldUseThreadingForPerformance` returns false for dedicated servers
+unless `-useperfthreads` is passed on the command line; the shipping binary
+contains the `useperfthreads`/`noperfthreads` switches. Compose and
+`scripts/boot-test.sh` now pass `-useperfthreads` so UE performance worker
+threads run. This does not parallelize the main game simulation thread;
+whether it measurably helps under translated (Box64) execution still needs
+runtime validation with real players.
+
 ### TLS and libraries
 
 The runtime preloads x86 libstdc++, enables Box64 strong memory ordering, and

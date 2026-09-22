@@ -308,7 +308,14 @@ consistent between starts. The game itself can include join passwords and
 session details in logs; redact logs before sharing them.
 
 Compose supplies the tested runtime flags, including `-ansimalloc` and
-`BOX64_DYNACACHE=0`. To experiment with launch arguments, edit the environment
+`BOX64_DYNACACHE=0`. The default arguments also pass `-useperfthreads`: the
+Unreal Engine 5.6.1 dedicated server otherwise disables its performance
+worker threads (`FApp::ShouldUseThreadingForPerformance` returns false for
+dedicated servers without the flag; the shipping binary contains the
+`useperfthreads` switch). This enables UE's performance task threads; it
+does **not** parallelize the main game simulation, so runtime validation
+under real player load is still needed. To experiment with launch
+arguments, edit the environment
 section in `compose.yaml`; it takes precedence over values in `.env`.
 
 ### Change the join password

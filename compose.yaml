@@ -12,7 +12,7 @@ services:
       RSDW_PORT: "7777"
       RSDW_AUTO_STOP_ON_UPDATE: "false"
       BOX64_DYNACACHE: "0"
-      RSDW_ADDITIONAL_ARGS: "-log -unattended -nullrhi -nosound -ansimalloc"
+      RSDW_ADDITIONAL_ARGS: "-log -unattended -nullrhi -nosound -ansimalloc -useperfthreads"
     ports:
       - "7777:7777/udp"
       - "8888:8888/udp"
