@@ -20,6 +20,15 @@ See [the test notes](VALIDATION.md) for what has actually been checked.
 This is an unofficial community project, not an ARM port of the game or a
 Jagex-supported configuration.
 
+## Tested devices
+
+Devices this server has been run on:
+
+| Device | RAM | Status |
+| --- | --- | --- |
+| Raspberry Pi 4 (Model B) | 8 GB | Tested — world creation, restart, and reload confirmed |
+| Mac Studio (M4 Max) | 36 GB | Experimental — Docker Desktop hosting |
+
 ## What you need
 
 - Either a Raspberry Pi 4 with **8 GB RAM recommended** and a 64-bit Linux OS,
