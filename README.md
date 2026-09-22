@@ -1,8 +1,16 @@
-# Dragonwilds on Raspberry Pi
+# Dragonwilds on ARM64
 
 Run a RuneScape: Dragonwilds dedicated server on a 64-bit Raspberry Pi using
 Docker and Box64. This project adapts [Jagex's official server image](https://github.com/runescape/rsdw-dedicated)
 with an ARM64 runtime, x86 translation, and a native game downloader.
+
+You can also try hosting directly on an **Apple Silicon Mac** through Docker
+Desktop—no Raspberry Pi required. The Pi 4 is the tested platform; Mac hosting
+is experimental.
+
+- [Run on a Raspberry Pi](#quick-start)
+- [Run on a Mac instead of a Pi](#run-on-a-mac-instead-of-a-pi)
+- [Use a Mac to manage a Pi over SSH](#use-a-mac-to-set-up-a-raspberry-pi)
 
 **Experimental, but it boots:** a Pi 4 has created a world, registered a session,
 and loaded the saved world after a restart. That is not yet a promise of smooth
@@ -14,9 +22,12 @@ Jagex-supported configuration.
 
 ## What you need
 
-- A Raspberry Pi 4 with **8 GB RAM recommended**, running a 64-bit Linux OS.
-  Debian 13 has been tested. Other boards, including the Pi 5, are untested.
-- Docker Engine and the Docker Compose plugin (`docker compose`).
+- Either a Raspberry Pi 4 with **8 GB RAM recommended** and a 64-bit Linux OS,
+  or an **Apple Silicon Mac** with enough memory for Docker and macOS.
+  Debian 13 on the Pi 4 has been tested. Mac hosting and other boards, including
+  the Pi 5, are untested. Local Intel Mac hosting is not supported by this project.
+- Docker Engine and the Docker Compose plugin (`docker compose`) on Linux, or
+  Docker Desktop on Mac, which includes Compose.
 - Python 3 for the configuration helpers.
 - Plenty of free disk space: **30 GB or more recommended before building**.
   Build layers, the image, game downloads, and saves all use space. An SSD is
@@ -40,7 +51,8 @@ or use `sudo` for the Docker commands.
 ## Quick start
 
 Download or clone this repository and open a terminal in its directory on the
-machine that will host the server. For Mac options, see [Setup from a Mac](#setup-from-a-mac).
+machine that will host the server. Mac users should first follow
+[Run on a Mac instead of a Pi](#run-on-a-mac-instead-of-a-pi).
 
 ```sh
 git clone https://github.com/Agentic-Rens/dragonwilds-arm64.git
@@ -75,12 +87,127 @@ so use `sudo` to view or edit it. Do not use `sudo` with Docker Desktop on Mac.
 Watch startup with `docker compose logs -f server`, then follow [Join](#4-join).
 The script finishing means the container has started, not that the game is ready.
 
-## Setup from a Mac
+## Run on a Mac instead of a Pi
 
-### Use your Mac to set up a Raspberry Pi
+In this setup, **the Mac hosts the server**. All commands below run in macOS
+Terminal, and no Pi or SSH connection is needed. Docker Desktop provides an
+ARM64 Linux VM; Box64 inside the container translates the x86 game server.
 
-This works from either an Intel or Apple Silicon Mac. The game server runs on
-the Pi; your Mac is just the terminal.
+Use an **Apple Silicon Mac (M-series)**. Check **Apple menu → About This Mac**
+for its chip, or run `uname -m` in a native Terminal session: it should report
+`arm64`. Local Intel Mac hosting is not supported by the setup script.
+
+**Mac hosting has not been runtime-tested here.** It uses the same Box64 build
+and workarounds as the Pi. Passing setup or preflight is not proof of a playable
+Mac-hosted session.
+
+### 1. Install Docker Desktop and Python
+
+If you already use [Homebrew](https://brew.sh/):
+
+```sh
+brew install --cask docker
+brew install python git
+open -a Docker
+```
+
+Alternatively, install [Docker Desktop for Apple Silicon](https://docs.docker.com/desktop/setup/install/mac-install/)
+and [Python 3 for macOS](https://www.python.org/downloads/macos/) using their
+installers. Install Apple's Command Line Tools with `xcode-select --install`
+if Git is missing, or download the repository ZIP instead of cloning it.
+
+Complete Docker Desktop's first-run setup and wait for its engine to start.
+In Docker Desktop's resource settings, allow at least **4 GB of VM memory**,
+preferably **6–8 GB** if your Mac has room, and at least **30 GB of free
+Docker disk-image capacity**. Leave memory and disk space for macOS and other
+apps; a 16 GB or larger Mac gives more breathing room.
+
+Verify your tools and Docker target:
+
+```sh
+python3 --version
+docker compose version
+docker context ls
+docker info --format '{{.OSType}}/{{.Architecture}}'
+```
+
+The final command should report `linux/aarch64` or `linux/arm64`. If you use
+remote Docker contexts, select your local Docker Desktop context before setup
+(normally `docker context use desktop-linux`). **Do not use `sudo`** for the
+following commands on Mac.
+
+### 2. Download the project and run setup
+
+```sh
+git clone https://github.com/Agentic-Rens/dragonwilds-arm64.git
+cd dragonwilds-arm64
+sh scripts/setup.sh
+```
+
+Paste your EOS player ID from the game's Settings menu when prompted. Setup
+creates `.env` with fixed join/admin passwords, builds the image, runs
+preflight, and starts the server. The first build and game download can take
+a while. View the passwords privately with `open -e .env`.
+
+Follow startup:
+
+```sh
+docker compose logs -f server
+```
+
+Wait for the world-settings beacon on UDP `8888` and `ReadyToJoin` with
+`value[1]`. Pressing Control-C exits the log viewer; the server keeps running.
+
+### 3. Connect to the Mac-hosted server
+
+- From a game client on another device on your LAN, Direct Connect to
+  **`<mac-lan-address>:7777`** and enter the join password from `.env`.
+- Find the Mac's LAN address in **System Settings → Network → your active
+  connection → Details → TCP/IP**. Use the Mac's address, not the container's
+  internal address.
+- If a compatible game client is running on the same Mac, use
+  **`localhost:7777`**. This project hosts the Linux server only; it does not
+  install or provide a native macOS game client.
+- Allow Docker Desktop's incoming traffic through the macOS firewall if
+  prompted. Both **UDP 7777 and UDP 8888** must be reachable.
+- For internet players, forward both UDP ports on your router to the Mac.
+  A DHCP reservation helps keep the Mac's LAN address stable.
+
+### 4. Keep it running and manage saves
+
+Docker Desktop must stay running, and the Mac must stay awake while people
+play. Keep a MacBook connected to power with its lid open. To prevent idle
+system sleep during a session, run this in a separate Terminal tab and leave it
+running:
+
+```sh
+caffeinate -i
+```
+
+Press Control-C in that tab when you no longer need to keep the Mac awake.
+The command does not keep a closed-lid MacBook awake. For regular hosting,
+configure the Mac's power settings and Docker Desktop's startup-at-login option.
+The container's restart policy takes effect once Docker Desktop is running;
+it does not start Docker Desktop itself.
+
+From the repository directory:
+
+```sh
+docker compose ps
+docker compose stop     # Stop the game server cleanly
+docker compose start    # Start it again
+```
+
+World data lives in the named volume `dragonwilds-pi_server-data` inside Docker
+Desktop's Linux VM, not alongside the repository. Follow [Saves and backups](#saves-and-backups)
+before resetting or uninstalling Docker Desktop. Keep `.env` as a separate
+private backup. The volume retains its name on Mac so the same backup and
+restore instructions work on both platforms.
+
+## Use a Mac to set up a Raspberry Pi
+
+This separate option works from either an Intel or Apple Silicon Mac. The game
+server runs on the Pi; your Mac is just the terminal.
 
 1. Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to install a
    64-bit OS. Set your Pi's username, network settings, and enable SSH in Imager.
@@ -98,37 +225,6 @@ the Pi; your Mac is just the terminal.
    detached server keeps running after you close Terminal.
 5. Players connect to `<pi-address>:7777`. You do not need Docker Desktop on
    your Mac for this route.
-
-### Host on an Apple Silicon Mac (experimental)
-
-You can also try the ARM64 Linux container in Docker Desktop on an M-series
-Mac. **This has not been runtime-tested here.** It uses the same Box64 build and
-workarounds as the Pi; preflight success alone does not establish compatibility.
-Local Intel Mac hosting is not supported by this setup script.
-
-1. Install and start [Docker Desktop for Apple Silicon](https://docs.docker.com/desktop/setup/install/mac-install/).
-   Allow at least **4 GB of Docker VM memory**, preferably **6–8 GB** if your Mac
-   has room, and at least **30 GB of free Docker disk-image capacity** for the
-   build and game. Leave memory for macOS and other apps.
-2. Install Python 3. With [Homebrew](https://brew.sh/), run `brew install python`;
-   alternatively use the [python.org macOS installer](https://www.python.org/downloads/macos/).
-3. Download or clone this repository and open Terminal in its directory. Check
-   `docker info`, `docker compose version`, and `python3 --version`, then run:
-
-   ```sh
-   sh scripts/setup.sh
-   docker compose logs -f server
-   ```
-
-4. Wait for `ReadyToJoin` with `value[1]`. A client on the same Mac uses
-   `localhost:7777`; clients elsewhere on your LAN use `<mac-lan-address>:7777`.
-   Allow Docker's incoming traffic through the macOS firewall if prompted.
-
-Docker Desktop must remain running, and the Mac must stay awake while people
-play. Its startup-at-login setting is separate from the container's restart
-policy. Saves are in Docker Desktop's named volume; back them up before
-resetting or uninstalling Docker Desktop. Hosting this Linux server does not
-install or provide a native macOS game client.
 
 ## Manual setup
 
