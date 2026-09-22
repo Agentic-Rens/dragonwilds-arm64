@@ -10,5 +10,5 @@ fi
 docker run --rm --name dragonwilds-boot-test --platform linux/arm64 \
   -v dragonwilds-pi_server-data:/home/steam/rsdw-dedicated \
   -w /home/steam/rsdw-dedicated/RSDragonwilds/Binaries/Linux \
-  --entrypoint /bin/bash dragonwilds-pi:experimental \
+  --entrypoint /bin/bash ghcr.io/agentic-rens/dragonwilds-arm64:latest \
   -lc 'set -e; chmod +x ./RSDragonwildsServer-Linux-Shipping ../../Plugins/Developer/Sentry/Binaries/Linux/crashpad_handler; export BOX64_DYNACACHE=0; exec timeout --signal=TERM --kill-after=30 180 box64 ./RSDragonwildsServer-Linux-Shipping RSDragonwilds -log -unattended -nullrhi -nosound -ansimalloc -useperfthreads'

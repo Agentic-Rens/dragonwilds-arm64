@@ -8,8 +8,8 @@ Usage: sh scripts/setup.sh [EOS_PLAYER_ID [--server-name NAME] [--world-name NAM
 
 With no .env, prompts for an EOS player ID or uses the supplied arguments.
 With an existing .env, run without arguments to reuse its settings.
-Builds the ARM64 image, runs preflight, and starts the server.
-An already-running server is left alone.
+Pulls the prebuilt image (or builds it locally), runs preflight, and
+starts the server. An already-running server is left alone.
 EOF
 }
 
@@ -64,8 +64,11 @@ if [ -n "$running" ]; then
   exit 0
 fi
 
-printf '%s\n' 'Building the image. The first build can take around an hour on a Pi 4.'
-docker compose build server
+printf '%s\n' 'Pulling the prebuilt image from GHCR.'
+if ! docker compose pull server; then
+  printf '%s\n' 'Pull failed; building locally. The first build can take around an hour on a Pi 4.'
+  docker compose build server
+fi
 sh scripts/preflight.sh
 docker compose up -d --no-build server
 printf '\n%s\n' \
