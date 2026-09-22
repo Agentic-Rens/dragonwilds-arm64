@@ -2,4 +2,6 @@
 !Dockerfile
 !entrypoint.sh
 !patch-upstream.py
+!scripts/
+!scripts/thread-report.py
 !LICENSE

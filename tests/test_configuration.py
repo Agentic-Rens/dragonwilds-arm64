@@ -37,6 +37,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(settings["RSDW_SERVER_NAME"], "Weekend Server")
         self.assertEqual(settings["RSDW_WORLD_NAME"], "World-1")
         self.assertEqual(settings["RSDW_OWNER_ID"], OWNER_ID)
+        self.assertEqual(settings["RSDW_ALLOCATOR"], "ansimalloc")
         self.assertEqual(stat.S_IMODE(self.env.stat().st_mode), 0o600)
         self.assertNotEqual(settings["RSDW_PASSWORD"], settings["RSDW_ADMIN_PASSWORD"])
         for key in ("RSDW_PASSWORD", "RSDW_ADMIN_PASSWORD"):

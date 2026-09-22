@@ -26,6 +26,7 @@ content = (
     f"RSDW_WORLD_NAME={args.world_name}\n"
     f"RSDW_PASSWORD={secrets.token_hex(8)}\n"
     f"RSDW_ADMIN_PASSWORD={secrets.token_hex(16)}\n"
+    "RSDW_ALLOCATOR=ansimalloc\n"
 )
 try:
     fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)

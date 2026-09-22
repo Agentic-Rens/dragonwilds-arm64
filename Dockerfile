@@ -41,13 +41,14 @@ ENV HOME=/home/steam STEAMAPPID=4019830 STEAMAPP=rsdw \
     STEAMCMDDIR=/home/steam/steamcmd STEAMAPPDIR=/home/steam/rsdw-dedicated \
     STEAMAPPVALIDATE=0 GAMELIFT=false DEVBUILD_PRESIGNED_URL="" \
     RSDW_SERVER_NAME="Dragonwilds Pi" RSDW_PORT=7777 RSDW_ADMINS="" \
-    RSDW_ADDITIONAL_ARGS="" BOX64_LD_LIBRARY_PATH=/opt/x86/lib64 \
+    RSDW_ALLOCATOR=ansimalloc RSDW_ADDITIONAL_ARGS="" BOX64_LD_LIBRARY_PATH=/opt/x86/lib64 \
     BOX86_LD_LIBRARY_PATH=/opt/x86/lib32 BOX64_BASH=/opt/x86/bash \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
     BOX64_DYNAREC_STRONGMEM=1 OPENSSL_ia32cap=0 \
     BOX64_LD_PRELOAD=/opt/x86/lib64/libstdc++.so.6 \
     BOX64_EMULATED_LIBS=libssl.so.3:libcrypto.so.3:libzstd.so.1:libgcrypt.so.20:libgpg-error.so.0
 COPY --chmod=755 entrypoint.sh /pi-entrypoint.sh
+COPY --chmod=755 scripts/thread-report.py /usr/local/bin/thread-report.py
 COPY LICENSE /usr/share/doc/dragonwilds/LICENSE
 USER 1000:1000
 WORKDIR /home/steam

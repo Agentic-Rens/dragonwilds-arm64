@@ -301,15 +301,18 @@ not carry this traffic. This project does not configure your router or firewall.
 | `RSDW_WORLD_NAME` | Persistent world/save-slot name; keep it unchanged to reuse a world. |
 | `RSDW_PASSWORD` | Join password. An explicitly empty value allows public joining. |
 | `RSDW_ADMIN_PASSWORD` | Fixed, nonempty admin password; required. |
+| `RSDW_ALLOCATOR` | Memory allocator: `ansimalloc` (tested default), `mimalloc`, or `jemalloc`. |
 | `RSDW_SKIP_UPDATE` | Set to `true` to start already-downloaded game files without checking Steam. |
 
 Avoid the literal password `random`: the launcher rejects it so passwords stay
 consistent between starts. The game itself can include join passwords and
 session details in logs; redact logs before sharing them.
 
-Compose supplies the tested runtime flags, including `-ansimalloc` and
-`BOX64_DYNACACHE=0`. To experiment with launch arguments, edit the environment
-section in `compose.yaml`; it takes precedence over values in `.env`.
+Compose supplies the tested runtime flags, including `-ansimalloc` through
+`RSDW_ALLOCATOR`, and `BOX64_DYNACACHE=0`. To experiment with launch arguments,
+edit the environment section in `compose.yaml`; it takes precedence over values
+in `.env`. Set the allocator through `RSDW_ALLOCATOR` instead of adding an
+allocator flag to `RSDW_ADDITIONAL_ARGS`.
 
 ### Change the join password
 
@@ -331,7 +334,11 @@ docker compose ps                 # Container status
 docker compose logs --tail 100 server
 docker compose stop               # Graceful stop; saves are retained
 docker compose start              # Start the existing container
+sh scripts/thread-report.sh 10    # Per-thread CPU report over ten seconds
 ```
+
+The thread report requires an image built from this version of the repository.
+It is read-only and can run while the server is active.
 
 Game files are checked for updates at each start unless `RSDW_SKIP_UPDATE=true`.
 The base image digest and translator source are pinned, but the Steam game
@@ -393,6 +400,59 @@ the volume name.
   use the native downloader and launch the game through Box64.
 - Runtime workarounds cover the observed allocator, TLS, and x86 library issues.
   TLS certificate verification remains enabled.
+
+## CPU use and multicore behavior
+
+Docker does not pin the server to one core, and Box64 does not provide a
+switch that turns one game thread into several. On the tested four-core Pi,
+Docker allowed all four CPUs and the game reported four physical and logical
+cores. The server process contained 22 threads, including Unreal task workers,
+network, HTTP, and EOS threads.
+
+Unreal's dedicated-server design still has a main game thread. On four physical
+cores, its task scheduler can use three task-worker threads beside that main
+thread; engine code caps this worker pool at four even on larger hosts. A
+`docker stats` reading near 100% means one full core, not 100% of the whole
+machine. If that one thread is saturated while workers are idle, more allowed
+cores will not split the simulation work.
+
+After rebuilding this version of the image, measure the actual thread layout
+without stopping the server:
+
+```sh
+sh scripts/thread-report.sh 10
+```
+
+A report showing an affinity such as `0-3` and many threads means multicore
+access is working. A high `total_cpu` concentrated in one thread means the
+proprietary game logic, not Docker or Box64 affinity, is the bottleneck.
+
+### Experimental allocator settings
+
+The default `ansimalloc` setting is retained because the stock allocator
+crashed during a saved-world reload in testing. The allocator can still affect
+memory contention between Unreal's worker threads. When nobody is playing,
+`mimalloc` or `jemalloc` can be tested by setting `.env`:
+
+```sh
+RSDW_ALLOCATOR=mimalloc
+```
+
+Then rebuild this branch's image and recreate the server:
+
+```sh
+docker compose build server
+docker compose up -d --no-build
+```
+
+Load the saved world, shut down cleanly, and load it again before keeping an
+experimental allocator. `RSDW_ALLOCATOR=binnedmalloc` is also accepted for
+reproducing the original allocator behavior, but it is not recommended. These
+options may reduce allocation contention; they cannot parallelize the main
+game thread.
+
+`scripts/boot-test.sh` accepts the same `RSDW_ALLOCATOR` value when the main
+server is stopped. It is a three-minute boot test, not a multiplayer benchmark.
 
 ## Troubleshooting
 

@@ -47,6 +47,40 @@ class VolumeHelperTests(unittest.TestCase):
                         self.assertNotEqual(result.returncode, 0)
                         self.assertEqual(len(calls), 1)
 
+    def test_boot_test_allocator_override_and_validation(self):
+        for allocator in ("mimalloc", "jemalloc", "binnedmalloc"):
+            with self.subTest(allocator=allocator), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                docker = root / "docker"
+                docker.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALL_LOG"\n')
+                docker.chmod(0o700)
+                log = root / "calls"
+                environment = dict(os.environ, PATH=f"{root}:{os.environ['PATH']}",
+                                   CALL_LOG=str(log), DOCKER_STATE="idle",
+                                   RSDW_ALLOCATOR=allocator)
+                result = subprocess.run(
+                    ["sh", str(SCRIPTS / "boot-test.sh")], env=environment,
+                    capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("-" + allocator, log.read_text())
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            docker = root / "docker"
+            docker.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALL_LOG"\n')
+            docker.chmod(0o700)
+            environment = dict(os.environ, PATH=f"{root}:{os.environ['PATH']}",
+                               CALL_LOG=str(root / "calls"), DOCKER_STATE="idle",
+                               RSDW_ALLOCATOR="malloc")
+            result = subprocess.run(
+                ["sh", str(SCRIPTS / "boot-test.sh")], env=environment,
+                capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Unsupported RSDW_ALLOCATOR", result.stderr)
+            self.assertNotIn("run ", (root / "calls").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -41,6 +41,32 @@ After startup on the 8 GB board, the game process used about **1.96 GiB RSS**.
 Host memory usage was about 2.1 GiB, with around 5.6 GiB available and no swap
 usage. These are near-idle observations, not populated-world capacity estimates.
 
+### CPU affinity and thread layout
+
+The container had no Docker CPU quota, no NanoCPUs value, and an empty cpuset.
+Both the container process and game process had affinity for CPUs `0-3`. The
+game logged four physical and four logical cores available to the process.
+
+The game process contained 22 native threads. Its main thread reached about
+100% of one core during a busy sample, while task, HTTP, network, and EOS
+worker threads were below 1%. A later idle five-second sample showed 8.4% main
+thread usage and no worker above 0.2%. Those are point-in-time samples, but
+they establish that the container is not pinned to one core and that the
+process is already multithreaded.
+
+Unreal Engine 5.6 dedicated-server code caps its task-worker pool at four
+threads and normally creates three workers on a four-core host, beside the main
+game thread. The `-foregroundworkers=` option cannot raise the pool above that
+host-derived total, and is reset to one foreground worker when the pool has
+three or fewer workers. No Box64 setting in the pinned runtime converts one
+hot translated thread into multiple threads.
+
+The practical bottleneck is therefore the proprietary main game thread under
+Box64, not Docker CPU configuration. This branch adds `RSDW_ALLOCATOR` for
+controlled `mimalloc`/`jemalloc` experiments and a read-only
+`scripts/thread-report.sh` diagnostic. Neither has yet been runtime-tested for
+gameplay; `ansimalloc` remains the tested default.
+
 ### Clock experiment
 
 At stock 1.8 GHz, a 15-minute four-worker CPU verification passed without errors
@@ -72,8 +98,9 @@ maintain the SteamCMD appmanifest expected by the official launcher.
 
 Unreal's default Binned2 allocator booted once but crashed on a later startup
 with SIGSEGV. Disabling the persistent translation cache alone did not fix it.
-Using `-ansimalloc` allowed repeated saved-world loads. Compose keeps that flag
-and `BOX64_DYNACACHE=0` as the tested combination.
+Using `-ansimalloc` allowed repeated saved-world loads. Compose keeps that
+allocator through `RSDW_ALLOCATOR=ansimalloc` and keeps `BOX64_DYNACACHE=0` as
+the tested combination.
 
 ### TLS and libraries
 

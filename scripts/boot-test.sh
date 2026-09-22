@@ -7,8 +7,16 @@ if [ -n "$running" ]; then
   echo 'Stop containers using server-data before running the boot test.' >&2
   exit 1
 fi
+allocator=${RSDW_ALLOCATOR:-ansimalloc}
+case "$allocator" in
+  ansimalloc|mimalloc|jemalloc|binnedmalloc) ;;
+  *)
+    echo 'Unsupported RSDW_ALLOCATOR; expected ansimalloc, mimalloc, jemalloc, or binnedmalloc.' >&2
+    exit 1
+    ;;
+esac
 docker run --rm --name dragonwilds-boot-test --platform linux/arm64 \
   -v dragonwilds-pi_server-data:/home/steam/rsdw-dedicated \
   -w /home/steam/rsdw-dedicated/RSDragonwilds/Binaries/Linux \
   --entrypoint /bin/bash dragonwilds-pi:experimental \
-  -lc 'set -e; chmod +x ./RSDragonwildsServer-Linux-Shipping ../../Plugins/Developer/Sentry/Binaries/Linux/crashpad_handler; export BOX64_DYNACACHE=0; exec timeout --signal=TERM --kill-after=30 180 box64 ./RSDragonwildsServer-Linux-Shipping RSDragonwilds -log -unattended -nullrhi -nosound -ansimalloc'
+  -lc 'set -e; chmod +x ./RSDragonwildsServer-Linux-Shipping ../../Plugins/Developer/Sentry/Binaries/Linux/crashpad_handler; export BOX64_DYNACACHE=0; exec timeout --signal=TERM --kill-after=30 180 box64 ./RSDragonwildsServer-Linux-Shipping RSDragonwilds -log -unattended -nullrhi -nosound -'"$allocator"
