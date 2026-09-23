@@ -23,8 +23,10 @@ Its 32 GB microSD had little space left after development builds. Other Pi
 models and operating systems have not been validated.
 
 The setup script also accepts Apple Silicon Docker Desktop's ARM64 Linux engine.
-Its orchestration is covered by local tests with a fake Docker CLI; the image,
-game startup, UDP connectivity, and performance on macOS remain untested.
+Its orchestration is covered by local tests with a fake Docker CLI. Hosting on
+a Mac Studio (M4 Max) via Docker Desktop has been proven to work at runtime.
+Other Apple Silicon Macs remain untested, and no player-count benchmarks or
+long-running stability measurements were taken on macOS.
 
 ## Confirmed
 
@@ -82,9 +84,10 @@ The server reports Unreal Engine 5.6.1. In that version,
 unless `-useperfthreads` is passed on the command line; the shipping binary
 contains the `useperfthreads`/`noperfthreads` switches. Compose and
 `scripts/boot-test.sh` now pass `-useperfthreads` so UE performance worker
-threads run. This does not parallelize the main game simulation thread;
-whether it measurably helps under translated (Box64) execution still needs
-runtime validation with real players.
+threads run. The flag has been proven to work at runtime: the performance
+worker threads are active and use multiple cores for eligible worker-thread
+work under translated (Box64) execution. This does not parallelize the main
+game simulation thread, and there are no detailed player-count benchmarks.
 
 ### TLS and libraries
 
