@@ -10,9 +10,9 @@ Run a RuneScape: Dragonwilds dedicated server on a 64-bit Raspberry Pi using
 Docker and Box64. This project adapts [Jagex's official server image](https://github.com/runescape/rsdw-dedicated)
 with an ARM64 runtime, x86 translation, and a native game downloader.
 
-You can also try hosting directly on an **Apple Silicon Mac** through Docker
-Desktop—no Raspberry Pi required. The Pi 4 is the tested platform; Mac hosting
-is experimental.
+You can also host directly on an **Apple Silicon Mac** through Docker
+Desktop—no Raspberry Pi required. The Pi 4 and the Mac Studio (M4 Max) are
+the tested platforms; other Apple Silicon Macs remain untested.
 
 - [Run on a Raspberry Pi](#quick-start)
 - [Run on a Mac instead of a Pi](#run-on-a-mac-instead-of-a-pi)
@@ -33,14 +33,15 @@ Devices this server has been run on:
 | Device | RAM | Status |
 | --- | --- | --- |
 | Raspberry Pi 4 (Model B) | 8 GB | Tested — world creation, restart, and reload confirmed |
-| Mac Studio (M4 Max) | 36 GB | Experimental — Docker Desktop hosting |
+| Mac Studio (M4 Max) | 36 GB | Tested — Docker Desktop hosting confirmed |
 
 ## What you need
 
 - Either a Raspberry Pi 4 with **8 GB RAM recommended** and a 64-bit Linux OS,
   or an **Apple Silicon Mac** with enough memory for Docker and macOS.
-  Debian 13 on the Pi 4 has been tested. Mac hosting and other boards, including
-  the Pi 5, are untested. Local Intel Mac hosting is not supported by this project.
+  Debian 13 on the Pi 4 and Docker Desktop on a Mac Studio (M4 Max) have been
+  tested. Other Apple Silicon Macs and other boards, including the Pi 5, are
+  untested. Local Intel Mac hosting is not supported by this project.
 - Docker Engine and the Docker Compose plugin (`docker compose`) on Linux, or
   Docker Desktop on Mac, which includes Compose.
 - Python 3 for the configuration helpers.
@@ -115,9 +116,10 @@ Use an **Apple Silicon Mac (M-series)**. Check **Apple menu → About This Mac**
 for its chip, or run `uname -m` in a native Terminal session: it should report
 `arm64`. Local Intel Mac hosting is not supported by the setup script.
 
-**Mac hosting has not been runtime-tested here.** It uses the same Box64 build
-and workarounds as the Pi. Passing setup or preflight is not proof of a playable
-Mac-hosted session.
+**Mac hosting has been runtime-tested on a Mac Studio (M4 Max) with Docker
+Desktop**, which runs the server successfully. Other Apple Silicon Macs remain
+untested. Passing setup or preflight is still not proof of a playable
+Mac-hosted session under player load.
 
 ### 1. Install Docker Desktop and Python
 
@@ -340,11 +342,12 @@ Compose supplies the tested runtime flags, including `-ansimalloc` and
 Unreal Engine 5.6.1 dedicated server otherwise disables its performance
 worker threads (`FApp::ShouldUseThreadingForPerformance` returns false for
 dedicated servers without the flag; the shipping binary contains the
-`useperfthreads` switch). This enables UE's performance task threads; it
-does **not** parallelize the main game simulation, so runtime validation
-under real player load is still needed. To experiment with launch
-arguments, edit the environment
-section in `compose.yaml`; it takes precedence over values in `.env`.
+`useperfthreads` switch). The flag has been proven to work at runtime: UE's
+performance task threads run and use multiple cores for eligible
+worker-thread work. It does **not** parallelize the main game simulation,
+and detailed player-count benchmarks have not been measured. To experiment
+with launch arguments, edit the environment section in `compose.yaml`; it
+takes precedence over values in `.env`.
 
 ### Change the join password
 
